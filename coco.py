@@ -62,23 +62,30 @@ class CocoDetectionCP(CocoDetection):
         image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
 
         #convert all of the target segmentations to masks
-        #bboxes are expected to be (y1, x1, y2, x2, category_id)
+        #bboxes are expected to be (y1, x1, y2, x2, {anno_meta})
         masks = []
         bboxes = []
+        # anno_meta = {iscrowd: 0|1, categroy_id: int, supercategory: str}
+        # obj is a coco segmentation dict
         for ix, obj in enumerate(target):
             masks.append(self.coco.annToMask(obj))
-            
             b_box = obj['bbox']
             #b_box = [b_box[0],b_box[1],b_box[0]+b_box[2],b_box[1]+b_box[3]]
             #print(b_box)
             #bboxes.append(obj['bbox'] + [obj['category_id']] + [ix])
-            bboxes.append(b_box + [obj['category_id']] + [ix])
-
+            anno_meta = {
+                "iscrowd": obj['iscrowd'],
+                "category_id": obj["category_id"],
+                "supercategory": obj["supercategory"]
+            }
+            
+            bboxes.append(b_box + [anno_meta] + [ix])
         #pack outputs into a dict
         output = {
             'image': image,
             'masks': masks,
-            'bboxes': bboxes
+            'bboxes': bboxes,
+            'anno_meta': anno_meta
         }
         
         return self.transforms(**output)
